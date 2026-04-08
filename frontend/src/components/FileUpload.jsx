@@ -55,12 +55,12 @@ export function FileUpload({ onUpload, isLoading }) {
         {/* Hero Text */}
         <div className="text-center mb-8">
           <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">
-            Transform Data Into Insights
+            Des tableaux de bord qui s'adaptent a vos donnees
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Upload your dataset and let our AI-powered analytics engine
-            automatically generate dashboards, detect patterns, and provide
-            actionable insights.
+            Importez votre fichier et laissez Z.Analytics analyser vos
+            donnees, detecter les tendances et generer automatiquement les
+            visualisations les plus pertinentes.
           </p>
         </div>
 
@@ -100,24 +100,24 @@ export function FileUpload({ onUpload, isLoading }) {
             {/* Text */}
             {isLoading ? (
               <div>
-                <p className="text-lg font-medium">Analyzing your data...</p>
+                <p className="text-lg font-medium">Analyse de vos donnees...</p>
                 <p className="text-sm text-muted-foreground">
-                  Detecting column types and patterns
+                  Detection des types de colonnes et des tendances
                 </p>
               </div>
             ) : isDragActive ? (
               <div>
                 <p className="text-lg font-medium text-accent">
-                  Drop your file here
+                  Deposez votre fichier ici
                 </p>
               </div>
             ) : (
               <div>
                 <p className="text-lg font-medium">
-                  Drag & drop your data file here
+                  Glissez-deposez votre fichier ici
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  or click to browse
+                  ou cliquez pour parcourir
                 </p>
               </div>
             )}
@@ -144,18 +144,18 @@ export function FileUpload({ onUpload, isLoading }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
           <FeatureCard
             icon="📊"
-            title="Auto Dashboards"
-            description="Instant visualizations based on your data structure"
+            title="Tableaux de bord automatiques"
+            description="Des visualisations adaptees a la structure de vos donnees"
           />
           <FeatureCard
             icon="🧠"
-            title="AI Insights"
-            description="Claude-powered analysis and recommendations"
+            title="Analyse IA"
+            description="Des analyses et recommandations plus pertinentes"
           />
           <FeatureCard
             icon="📄"
-            title="Export Reports"
-            description="Generate PDF, PowerPoint, and Excel reports"
+            title="Export de rapports"
+            description="Generez des rapports exploitables a partir de vos donnees"
           />
         </div>
       </div>

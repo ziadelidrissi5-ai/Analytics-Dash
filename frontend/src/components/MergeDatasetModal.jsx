@@ -61,12 +61,12 @@ export function MergeDatasetModal({
 
       setSecondDataset(response.data.id);
       setSecondDatasetInfo(response.data);
-      toast.success(`"${response.data.filename}" uploaded`, {
-        description: `${response.data.row_count.toLocaleString()} rows`,
+      toast.success(`"${response.data.filename}" charge`, {
+        description: `${response.data.row_count.toLocaleString()} lignes`,
       });
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Upload failed");
+      toast.error("Echec du chargement");
     } finally {
       setIsUploading(false);
     }
@@ -86,12 +86,12 @@ export function MergeDatasetModal({
 
   const handleMerge = async () => {
     if (!secondDataset) {
-      toast.error("Please upload a second dataset first");
+      toast.error("Veuillez d'abord charger un second jeu de donnees");
       return;
     }
 
     if ((mergeType === "left_join" || mergeType === "inner_join") && !joinKey) {
-      toast.error("Please select a join key column");
+      toast.error("Veuillez selectionner une colonne de jointure");
       return;
     }
 
@@ -107,8 +107,8 @@ export function MergeDatasetModal({
       onMergeComplete(response.data.id, response.data);
     } catch (error) {
       console.error("Merge error:", error);
-      toast.error("Failed to merge datasets", {
-        description: error.response?.data?.detail || "Please try again",
+      toast.error("Echec de la fusion", {
+        description: error.response?.data?.detail || "Veuillez reessayer",
       });
     } finally {
       setIsMerging(false);
@@ -138,10 +138,10 @@ export function MergeDatasetModal({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">
-            Merge / Cross Datasets
+            Fusion / croisement de jeux de donnees
           </DialogTitle>
           <DialogDescription>
-            Combine your current dataset with another file
+            Combinez votre jeu de donnees actuel avec un autre fichier
           </DialogDescription>
         </DialogHeader>
 
@@ -149,7 +149,7 @@ export function MergeDatasetModal({
           {/* Current Dataset */}
           <div className="space-y-2">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Current Dataset
+              Jeu de donnees actuel
             </Label>
             <Card className="border border-border">
               <CardContent className="p-3 flex items-center gap-3">
@@ -160,8 +160,8 @@ export function MergeDatasetModal({
                 <div className="flex-1">
                   <p className="font-medium text-sm">{currentDatasetInfo?.filename}</p>
                   <p className="text-xs text-muted-foreground">
-                    {currentDatasetInfo?.row_count.toLocaleString()} rows •{" "}
-                    {currentDatasetInfo?.column_count} columns
+                    {currentDatasetInfo?.row_count.toLocaleString()} lignes •{" "}
+                    {currentDatasetInfo?.column_count} colonnes
                   </p>
                 </div>
               </CardContent>
@@ -178,7 +178,7 @@ export function MergeDatasetModal({
           {/* Second Dataset Upload/Info */}
           <div className="space-y-2">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Second Dataset
+              Second jeu de donnees
             </Label>
             {!secondDatasetInfo ? (
               <Card
@@ -199,8 +199,8 @@ export function MergeDatasetModal({
                   )}
                   <p className="text-sm text-center">
                     {isUploading
-                      ? "Uploading..."
-                      : "Drop a file here or click to browse"}
+                      ? "Chargement..."
+                      : "Deposez un fichier ici ou cliquez pour parcourir"}
                   </p>
                   <div className="flex gap-2">
                     <Badge variant="secondary">CSV</Badge>
@@ -219,8 +219,8 @@ export function MergeDatasetModal({
                   <div className="flex-1">
                     <p className="font-medium text-sm">{secondDatasetInfo.filename}</p>
                     <p className="text-xs text-muted-foreground">
-                      {secondDatasetInfo.row_count.toLocaleString()} rows •{" "}
-                      {secondDatasetInfo.column_count} columns
+                      {secondDatasetInfo.row_count.toLocaleString()} lignes •{" "}
+                      {secondDatasetInfo.column_count} colonnes
                     </p>
                   </div>
                   <Button
@@ -231,7 +231,7 @@ export function MergeDatasetModal({
                       setSecondDatasetInfo(null);
                     }}
                   >
-                    Change
+                    Changer
                   </Button>
                 </CardContent>
               </Card>
@@ -242,7 +242,7 @@ export function MergeDatasetModal({
           {secondDatasetInfo && (
             <div className="space-y-4 p-4 bg-secondary/50 rounded-lg">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Merge Type</Label>
+                <Label className="text-sm font-medium">Type de fusion</Label>
                 <Select value={mergeType} onValueChange={setMergeType}>
                   <SelectTrigger data-testid="merge-type-select">
                     <SelectValue />
@@ -250,17 +250,17 @@ export function MergeDatasetModal({
                   <SelectContent>
                     <SelectItem value="concat">
                       <div className="flex items-center gap-2">
-                        <span>Concatenate (Append rows)</span>
+                        <span>Concatener (ajouter les lignes)</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="left_join">
                       <div className="flex items-center gap-2">
-                        <span>Left Join (Keep all from current)</span>
+                        <span>Jointure gauche (garder tout l'actuel)</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="inner_join">
                       <div className="flex items-center gap-2">
-                        <span>Inner Join (Keep matching only)</span>
+                        <span>Jointure interne (garder les correspondances)</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -270,11 +270,11 @@ export function MergeDatasetModal({
               {/* Join Key Selection */}
               {(mergeType === "left_join" || mergeType === "inner_join") && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Join Key Column</Label>
+                  <Label className="text-sm font-medium">Colonne de jointure</Label>
                   {commonColumns.length > 0 ? (
                     <Select value={joinKey} onValueChange={setJoinKey}>
                       <SelectTrigger data-testid="join-key-select">
-                        <SelectValue placeholder="Select a common column" />
+                        <SelectValue placeholder="Selectionnez une colonne commune" />
                       </SelectTrigger>
                       <SelectContent>
                         {commonColumns.map((col) => (
@@ -286,12 +286,12 @@ export function MergeDatasetModal({
                     </Select>
                   ) : (
                     <p className="text-sm text-destructive">
-                      No common columns found between datasets. Use concatenate instead.
+                      Aucune colonne commune trouvee entre les jeux de donnees. Utilisez plutot la concatenation.
                     </p>
                   )}
                   {commonColumns.length > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Found {commonColumns.length} common column(s):{" "}
+                      {commonColumns.length} colonne(s) commune(s) trouvee(s) :{" "}
                       {commonColumns.slice(0, 5).join(", ")}
                       {commonColumns.length > 5 && "..."}
                     </p>
@@ -305,7 +305,7 @@ export function MergeDatasetModal({
         {/* Actions */}
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Annuler
           </Button>
           <Button
             onClick={handleMerge}
@@ -316,12 +316,12 @@ export function MergeDatasetModal({
             {isMerging ? (
               <>
                 <Spinner className="h-4 w-4 mr-2 animate-spin" />
-                Merging...
+                Fusion...
               </>
             ) : (
               <>
                 <ArrowsLeftRight className="h-4 w-4 mr-2" />
-                Merge Datasets
+                Fusionner
               </>
             )}
           </Button>

@@ -45,10 +45,10 @@ export function Header({
             </div>
             <div>
               <h1 className="font-serif text-xl font-bold tracking-tight">
-                Analytics Engine
+                Z.Analytics
               </h1>
               <p className="text-xs text-muted-foreground">
-                Professional Data Intelligence
+                Intelligence des donnees
               </p>
             </div>
           </div>
@@ -81,7 +81,7 @@ export function Header({
                   className="h-7 px-3"
                 >
                   <Table className="h-4 w-4 mr-1" />
-                  Data
+                  Donnees
                 </Button>
                 <Button
                   variant={activeView === "dashboard" ? "default" : "ghost"}
@@ -92,7 +92,7 @@ export function Header({
                   className="h-7 px-3"
                 >
                   <ChartBar className="h-4 w-4 mr-1" />
-                  Dashboard
+                  Tableau de bord
                 </Button>
               </div>
 
@@ -105,7 +105,7 @@ export function Header({
                 className="hidden md:flex"
               >
                 <Funnel className="h-4 w-4 mr-1" />
-                Filters
+                Filtres
               </Button>
 
               <Button
@@ -121,7 +121,7 @@ export function Header({
                 ) : (
                   <Brain className="h-4 w-4 mr-1" />
                 )}
-                AI Insights
+                Analyse IA
               </Button>
 
               <Button
@@ -132,7 +132,7 @@ export function Header({
                 className="hidden lg:flex"
               >
                 <FileText className="h-4 w-4 mr-1" />
-                Report
+                Rapport
               </Button>
 
               {/* Mobile Menu */}
@@ -145,24 +145,24 @@ export function Header({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setActiveView("preview")}>
                     <Table className="h-4 w-4 mr-2" />
-                    View Data
+                    Voir les donnees
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={onGenerateDashboard}>
                     <ChartBar className="h-4 w-4 mr-2" />
-                    Dashboard
+                    Tableau de bord
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={onShowFilters}>
                     <Funnel className="h-4 w-4 mr-2" />
-                    Filters
+                    Filtres
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={onShowAI}>
                     <Brain className="h-4 w-4 mr-2" />
-                    AI Insights
+                    Analyse IA
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={onShowReport}>
                     <FileText className="h-4 w-4 mr-2" />
-                    Generate Report
+                    Generer un rapport
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -180,7 +180,7 @@ export function Header({
             className="bg-accent hover:bg-accent/90"
           >
             <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">New Dataset</span>
+            <span className="hidden sm:inline">Nouveau jeu de donnees</span>
           </Button>
 
           {/* Theme Toggle */}

@@ -31,7 +31,7 @@ export function AIInsightsPanel({ insights, onClose, onAskQuestion, isLoading })
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Brain className="h-5 w-5 text-accent" />
-            <h3 className="font-serif text-lg font-bold">AI Analysis</h3>
+            <h3 className="font-serif text-lg font-bold">Analyse IA</h3>
           </div>
           <Button
             variant="ghost"
@@ -50,7 +50,7 @@ export function AIInsightsPanel({ insights, onClose, onAskQuestion, isLoading })
             {insights.key_findings?.length > 0 && (
               <InsightSection
                 icon={<Target className="h-4 w-4" />}
-                title="Key Findings"
+                title="Points cles"
                 items={insights.key_findings}
                 accentColor="text-accent"
               />
@@ -60,7 +60,7 @@ export function AIInsightsPanel({ insights, onClose, onAskQuestion, isLoading })
             {insights.insights?.length > 0 && (
               <InsightSection
                 icon={<Lightbulb className="h-4 w-4" />}
-                title="Insights"
+                title="Observations"
                 items={insights.insights}
                 accentColor="text-chart-2"
               />
@@ -70,7 +70,7 @@ export function AIInsightsPanel({ insights, onClose, onAskQuestion, isLoading })
             {insights.anomalies?.length > 0 && (
               <InsightSection
                 icon={<Warning className="h-4 w-4" />}
-                title="Anomalies & Risks"
+                title="Anomalies et risques"
                 items={insights.anomalies}
                 accentColor="text-destructive"
               />
@@ -80,7 +80,7 @@ export function AIInsightsPanel({ insights, onClose, onAskQuestion, isLoading })
             {insights.recommendations?.length > 0 && (
               <InsightSection
                 icon={<Brain className="h-4 w-4" />}
-                title="Recommendations"
+                title="Recommandations"
                 items={insights.recommendations}
                 accentColor="text-chart-3"
               />
@@ -94,7 +94,7 @@ export function AIInsightsPanel({ insights, onClose, onAskQuestion, isLoading })
             <Input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask about your data..."
+              placeholder="Posez une question sur vos donnees..."
               disabled={isLoading}
               data-testid="ai-question-input"
               className="flex-1"

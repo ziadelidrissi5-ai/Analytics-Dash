@@ -68,10 +68,10 @@ export function DataPreview({
       {/* Header Stats */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="font-serif text-2xl font-bold">Data Preview</h2>
+          <h2 className="font-serif text-2xl font-bold">Apercu des donnees</h2>
           <p className="text-sm text-muted-foreground">
-            {total_rows.toLocaleString()} total rows •{" "}
-            {columns.length} columns
+            {total_rows.toLocaleString()} lignes au total •{" "}
+            {columns.length} colonnes
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export function DataPreview({
           className="bg-accent hover:bg-accent/90"
         >
           <ChartBar className="h-4 w-4 mr-2" />
-          Generate Dashboard
+          Generer le tableau de bord
         </Button>
       </div>
 
@@ -90,7 +90,7 @@ export function DataPreview({
         <CardHeader className="py-3 px-4">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Info className="h-4 w-4" />
-            Column Analysis
+            Analyse des colonnes
           </CardTitle>
         </CardHeader>
         <CardContent className="py-2 px-4">
@@ -110,17 +110,17 @@ export function DataPreview({
                   <TooltipContent className="max-w-xs">
                     <div className="text-xs space-y-1">
                       <p>
-                        <strong>Type:</strong> {getTypeBadge(col)}
+                        <strong>Type :</strong> {getTypeBadge(col)}
                       </p>
                       <p>
-                        <strong>Unique:</strong> {col.unique_count.toLocaleString()}
+                        <strong>Valeurs uniques :</strong> {col.unique_count.toLocaleString()}
                       </p>
                       <p>
-                        <strong>Nulls:</strong> {col.null_count.toLocaleString()}
+                        <strong>Valeurs nulles :</strong> {col.null_count.toLocaleString()}
                       </p>
                       {col.stats?.mean !== undefined && (
                         <p>
-                          <strong>Mean:</strong> {col.stats.mean?.toFixed(2)}
+                          <strong>Moyenne :</strong> {col.stats.mean?.toFixed(2)}
                         </p>
                       )}
                     </div>
@@ -129,7 +129,7 @@ export function DataPreview({
               </TooltipProvider>
             ))}
             {columns.length > 12 && (
-              <Badge variant="outline">+{columns.length - 12} more</Badge>
+              <Badge variant="outline">+{columns.length - 12} autres</Badge>
             )}
           </div>
         </CardContent>
@@ -178,9 +178,9 @@ export function DataPreview({
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-border">
           <p className="text-sm text-muted-foreground">
-            Showing {((page - 1) * page_size + 1).toLocaleString()} to{" "}
+            Affichage de {((page - 1) * page_size + 1).toLocaleString()} a{" "}
             {Math.min(page * page_size, total_rows).toLocaleString()} of{" "}
-            {total_rows.toLocaleString()} records
+            {total_rows.toLocaleString()} lignes
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -191,10 +191,10 @@ export function DataPreview({
               data-testid="prev-page-btn"
             >
               <CaretLeft className="h-4 w-4" />
-              Previous
+              Precedent
             </Button>
             <span className="text-sm px-2">
-              Page {page} of {total_pages}
+              Page {page} sur {total_pages}
             </span>
             <Button
               variant="outline"
@@ -203,7 +203,7 @@ export function DataPreview({
               disabled={page >= total_pages}
               data-testid="next-page-btn"
             >
-              Next
+              Suivant
               <CaretRight className="h-4 w-4" />
             </Button>
           </div>

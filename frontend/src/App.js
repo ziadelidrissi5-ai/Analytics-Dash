@@ -188,10 +188,10 @@ function MainApp() {
       const response = await axios.get(`${API}/datasets/${currentDataset}/dashboard`);
       setDashboardData(response.data);
       setActiveView("dashboard");
-      toast.success("Dashboard généré", { description: "Analyse automatique terminée" });
+      toast.success("Tableau de bord genere", { description: "Analyse automatique terminee" });
     } catch (error) {
       console.error("Dashboard error:", error);
-      toast.error("Échec de la génération du dashboard");
+      toast.error("Echec de la generation du tableau de bord");
     } finally {
       setIsLoading(false);
     }

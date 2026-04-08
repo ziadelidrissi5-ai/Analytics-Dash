@@ -67,7 +67,7 @@ export function Dashboard({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-serif text-2xl md:text-3xl font-bold">
-              {isGlobalView ? "Vue globale" : "Analytics Dashboard"}
+              {isGlobalView ? "Vue globale" : "Tableau de bord analytique"}
             </h2>
             {isGlobalView && (
               <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">
@@ -91,7 +91,7 @@ export function Dashboard({
               data-testid="merge-dataset-btn"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Merge Dataset
+              Fusionner les jeux de donnees
             </Button>
           )}
           {!isGlobalView && onShowAI && (
@@ -101,7 +101,7 @@ export function Dashboard({
               className="bg-accent hover:bg-accent/90"
             >
               <Brain className="h-4 w-4 mr-2" />
-              Deep Analysis
+              Analyse approfondie
             </Button>
           )}
         </div>
@@ -138,7 +138,7 @@ export function Dashboard({
           <CardHeader className="py-3 px-4">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Brain className="h-4 w-4 text-accent" />
-              AI Analysis Insights
+              Analyse IA
             </CardTitle>
           </CardHeader>
           <CardContent className="py-2 px-4">
@@ -176,7 +176,7 @@ export function Dashboard({
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Link className="h-4 w-4" />
-                Strong Correlations
+                Correlations fortes
               </CardTitle>
             </CardHeader>
             <CardContent className="py-2 px-4">
@@ -209,7 +209,7 @@ export function Dashboard({
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Warning className="h-4 w-4 text-destructive" />
-                Data Quality Alerts
+                Alertes qualite des donnees
               </CardTitle>
             </CardHeader>
             <CardContent className="py-2 px-4">
@@ -437,7 +437,7 @@ function ChartCard({ chart, chartIndex }) {
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "4px",
                 }}
-                formatter={(value) => [formatTooltipValue(value), "Value"]}
+                formatter={(value) => [formatTooltipValue(value), "Valeur"]}
               />
               <Line
                 type="monotone"
@@ -482,7 +482,7 @@ function ChartCard({ chart, chartIndex }) {
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "4px",
                 }}
-                formatter={(value) => [formatTooltipValue(value), "Count"]}
+                formatter={(value) => [formatTooltipValue(value), chart.config?.isHistogram ? "Frequence" : "Valeur"]}
               />
               <Bar dataKey="count" fill={CHART_COLORS[0]} radius={[2, 2, 0, 0]} />
             </BarChart>
@@ -566,12 +566,17 @@ function ChartCard({ chart, chartIndex }) {
   };
 
   return (
-    <Card
+      <Card
       className="border border-border"
       data-testid={`chart-${chart.chart_type}-${chartIndex}`}
     >
       <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
-        <CardTitle className="text-sm font-medium">{chart.title}</CardTitle>
+        <div className="pr-4">
+          <CardTitle className="text-sm font-medium">{chart.title}</CardTitle>
+          {chart.config?.description && (
+            <p className="text-xs text-muted-foreground mt-1">{chart.config.description}</p>
+          )}
+        </div>
         <Button
           variant="ghost"
           size="sm"

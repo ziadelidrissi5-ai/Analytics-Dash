@@ -451,6 +451,113 @@ def rank_columns(columns_info: List[ColumnInfo], predicate, keywords: Optional[L
     return [name for _, name in ranked]
 
 
+def semantic_score(name: str, keywords: List[str]) -> int:
+    lowered = normalize_column_name(name)
+    return sum(1 for keyword in keywords if keyword in lowered)
+
+
+def choose_time_column(columns_info: List[ColumnInfo]) -> Optional[str]:
+    temporal = [c.name for c in columns_info if c.is_temporal]
+    if not temporal:
+        return None
+    priority = ["date", "month", "period", "time", "year", "quarter", "week", "day"]
+    temporal.sort(key=lambda col: (-semantic_score(col, priority), len(col)))
+    return temporal[0]
+
+
+def choose_metric_columns(columns_info: List[ColumnInfo], domain: str, limit: int = 4) -> List[str]:
+    domain_keywords = DOMAIN_KEYWORDS.get(domain, [])
+    metrics = []
+    for col in columns_info:
+        if not col.is_numeric:
+            continue
+        lowered = normalize_column_name(col.name)
+        variability = 0
+        if col.stats and col.stats.get("mean") not in (None, 0) and col.stats.get("std") is not None:
+            variability = abs(float(col.stats["std"])) / max(abs(float(col.stats["mean"])), 1e-9)
+        score = 100
+        score += semantic_score(lowered, domain_keywords) * 25
+        score += semantic_score(lowered, ["revenue", "sales", "profit", "margin", "cost", "amount", "value", "score", "count", "rate", "price", "ebitda", "income"]) * 20
+        score += min(col.unique_count, 50)
+        score += min(int(variability * 20), 25)
+        score -= min(col.null_count, 50)
+        metrics.append((score, col.name))
+    metrics.sort(reverse=True)
+    return [name for _, name in metrics[:limit]]
+
+
+def choose_dimension_columns(columns_info: List[ColumnInfo], domain: str, limit: int = 3) -> List[str]:
+    domain_keywords = DOMAIN_KEYWORDS.get(domain, [])
+    dims = []
+    for col in columns_info:
+        if not col.is_categorical:
+            continue
+        if col.unique_count <= 1 or col.unique_count > 30:
+            continue
+        lowered = normalize_column_name(col.name)
+        score = 100
+        score += semantic_score(lowered, domain_keywords) * 20
+        score += semantic_score(lowered, ["region", "segment", "category", "product", "department", "channel", "status", "type", "group"]) * 20
+        score += max(0, 20 - col.unique_count)
+        score -= min(col.null_count, 50)
+        dims.append((score, col.name))
+    dims.sort(reverse=True)
+    return [name for _, name in dims[:limit]]
+
+
+def infer_default_aggregation(domain: str, metric_name: Optional[str]) -> str:
+    if not metric_name:
+        return "count"
+    lowered = normalize_column_name(metric_name)
+    if any(token in lowered for token in ["price", "rate", "ratio", "margin", "score", "age", "duration"]):
+        return "mean"
+    if domain in ["finance", "sales", "marketing", "inventory", "operations"]:
+        return "sum"
+    return "mean"
+
+
+def compute_period_change(df: pd.DataFrame, time_col: Optional[str], metric_col: str, aggregation: str) -> Optional[float]:
+    if not time_col or time_col not in df.columns or metric_col not in df.columns:
+        return None
+    period_df = df[[time_col, metric_col]].dropna().copy()
+    if period_df.empty or not pd.api.types.is_datetime64_any_dtype(period_df[time_col]):
+        return None
+    period_df = period_df.sort_values(time_col)
+    unique_dates = period_df[time_col].nunique()
+    freq = "D"
+    if unique_dates > 24:
+        freq = "W"
+    if unique_dates > 90:
+        freq = "M"
+    grouped = period_df.set_index(time_col).resample(freq)[metric_col]
+    if aggregation == "mean":
+        series = grouped.mean()
+    elif aggregation == "count":
+        series = grouped.count()
+    else:
+        series = grouped.sum()
+    series = series.dropna()
+    if len(series) < 2:
+        return None
+    previous = float(series.iloc[-2])
+    current = float(series.iloc[-1])
+    if previous == 0:
+        return None
+    return round(((current - previous) / abs(previous)) * 100, 1)
+
+
+def find_strongest_correlation_pair(df: pd.DataFrame, metric_cols: List[str]) -> Optional[tuple[str, str]]:
+    if len(metric_cols) < 2:
+        return None
+    correlations = calculate_correlations(df, metric_cols[:6])
+    if not correlations:
+        return None
+    top = correlations[0]
+    if abs(top["correlation"]) < 0.65:
+        return None
+    return top["column1"], top["column2"]
+
+
 def build_chart_data(
     df: pd.DataFrame,
     chart_type: str,
@@ -468,6 +575,15 @@ def build_chart_data(
     if chart_type == "bar":
         if not x_col or x_col not in df.columns:
             return []
+        if y_col is None and pd.api.types.is_numeric_dtype(df[x_col]):
+            series = df[x_col].dropna()
+            if len(series) < 5:
+                return []
+            hist, bin_edges = np.histogram(series, bins=min(limit, 10))
+            return [
+                {"bin": f"{bin_edges[i]:.1f}-{bin_edges[i+1]:.1f}", "count": int(hist[i])}
+                for i in range(len(hist))
+            ]
         if y_col and y_col in df.columns:
             grouped_df = df[[x_col, y_col]].dropna()
             if grouped_df.empty:
@@ -539,28 +655,34 @@ def build_chart_data(
 def build_domain_insights(df: pd.DataFrame, columns_info: List[ColumnInfo], domain: str) -> List[str]:
     insights = []
     completeness = (1 - df.isnull().sum().sum() / max(len(df) * max(len(df.columns), 1), 1)) * 100
-    insights.append(f"Le dataset contient {len(df):,} lignes, {len(df.columns)} colonnes et une complétude de {completeness:.1f}%.".replace(",", " "))
+    time_col = choose_time_column(columns_info)
+    metric_cols = choose_metric_columns(columns_info, domain, limit=3)
+    dim_cols = choose_dimension_columns(columns_info, domain, limit=2)
 
-    numeric_cols = [c.name for c in columns_info if c.is_numeric]
-    categorical_cols = [c.name for c in columns_info if c.is_categorical]
-
-    if numeric_cols:
-        best_numeric = numeric_cols[0]
-        insights.append(f"La mesure numérique la plus exploitable semble être '{best_numeric}', utile pour les KPI principaux.")
-    if categorical_cols:
-        best_category = categorical_cols[0]
-        top_value = df[best_category].astype(str).value_counts().head(1)
+    insights.append(f"Le dataset contient {len(df):,} lignes, {len(df.columns)} colonnes et une completude de {completeness:.1f}%.".replace(",", " "))
+    if metric_cols:
+        insights.append(f"La mesure principale a suivre est '{metric_cols[0]}', car elle combine bonne couverture et forte valeur analytique.")
+    if dim_cols:
+        top_value = df[dim_cols[0]].astype(str).value_counts().head(1)
         if not top_value.empty:
-            insights.append(f"La segmentation par '{best_category}' est structurante, avec '{top_value.index[0]}' en tête.")
+            insights.append(f"La segmentation la plus utile passe par '{dim_cols[0]}', avec '{top_value.index[0]}' comme categorie dominante.")
+    if time_col and metric_cols:
+        variation = compute_period_change(df, time_col, metric_cols[0], infer_default_aggregation(domain, metric_cols[0]))
+        if variation is not None:
+            direction = "hausse" if variation >= 0 else "baisse"
+            insights.append(f"La derniere periode montre une {direction} de {abs(variation):.1f}% sur '{metric_cols[0]}'.")
 
-    if domain == "finance":
-        insights.append("La priorisation doit porter sur les montants, marges, évolutions temporelles et concentrations par segment.")
-    elif domain == "customers":
-        insights.append("Le dashboard doit mettre en avant acquisition, rétention, segmentation client et concentration des comportements.")
-    elif domain == "marketing":
-        insights.append("Les visualisations les plus utiles comparent canaux, campagnes, volumes et efficacité de conversion.")
-    elif domain == "sales":
-        insights.append("Le dashboard doit privilégier performance commerciale, mix produit, régions et tendance des revenus.")
+    domain_messages = {
+        "finance": "Le tableau de bord doit mettre l'accent sur les evolutions temporelles, la rentabilite et les concentrations par segment.",
+        "customers": "Le tableau de bord doit faire ressortir la segmentation client, la valeur, la retention et les signaux de risque.",
+        "marketing": "Le tableau de bord doit comparer les canaux, les campagnes, les volumes et l'efficacite des actions.",
+        "sales": "Le tableau de bord doit prioriser performance commerciale, mix produit, regions et dynamique des ventes.",
+        "hr": "Le tableau de bord doit privilegier effectifs, remuneration, attrition et performance par equipe ou departement.",
+        "operations": "Le tableau de bord doit suivre capacite, volumes, qualite de service et points de friction du processus.",
+        "inventory": "Le tableau de bord doit suivre stocks, rotation, categories dominantes et risques de concentration.",
+    }
+    if domain in domain_messages:
+        insights.append(domain_messages[domain])
 
     return insights[:4]
 
@@ -568,92 +690,129 @@ def build_domain_insights(df: pd.DataFrame, columns_info: List[ColumnInfo], doma
 def build_fallback_ai_analysis(df: pd.DataFrame, columns_info: List[ColumnInfo], filename: str) -> Dict[str, Any]:
     """Heuristic analysis used when the external AI service is unavailable."""
     domain = infer_dataset_domain(columns_info, filename)
-    numeric_cols = rank_columns(columns_info, lambda c: c.is_numeric, DOMAIN_KEYWORDS.get(domain, []))
-    temporal_cols = rank_columns(columns_info, lambda c: c.is_temporal)
-    categorical_cols = rank_columns(columns_info, lambda c: c.is_categorical, DOMAIN_KEYWORDS.get(domain, []))
-
-    primary_metric = numeric_cols[0] if numeric_cols else None
-    secondary_metric = numeric_cols[1] if len(numeric_cols) > 1 else None
-    primary_time = temporal_cols[0] if temporal_cols else None
-    primary_category = categorical_cols[0] if categorical_cols else None
-    secondary_category = categorical_cols[1] if len(categorical_cols) > 1 else None
+    metric_cols = choose_metric_columns(columns_info, domain, limit=4)
+    time_col = choose_time_column(columns_info)
+    dimension_cols = choose_dimension_columns(columns_info, domain, limit=3)
+    primary_metric = metric_cols[0] if metric_cols else None
+    secondary_metric = metric_cols[1] if len(metric_cols) > 1 else None
+    aggregation = infer_default_aggregation(domain, primary_metric)
 
     kpis = [{"name": "Total Records", "column": None, "aggregation": "count", "formula": "Nombre total de lignes", "format": "integer"}]
     if primary_metric:
-        metric_format = infer_format_from_name(primary_metric)
-        if domain in ["finance", "sales", "marketing", "inventory"]:
-            kpis.append({"name": f"Total {primary_metric}", "column": primary_metric, "aggregation": "sum", "formula": "Somme globale", "format": metric_format})
-        kpis.append({"name": f"Average {primary_metric}", "column": primary_metric, "aggregation": "mean", "formula": "Moyenne", "format": metric_format})
-        kpis.append({"name": f"Median {primary_metric}", "column": primary_metric, "aggregation": "median", "formula": "Médiane", "format": metric_format})
+        main_format = infer_format_from_name(primary_metric)
+        main_agg = infer_default_aggregation(domain, primary_metric)
+        metric_prefix = "Total" if main_agg == "sum" else "Moyenne"
+        kpis.append({"name": f"{metric_prefix} {primary_metric}", "column": primary_metric, "aggregation": main_agg, "formula": "Indicateur principal", "format": main_format})
+        kpis.append({"name": f"Mediane {primary_metric}", "column": primary_metric, "aggregation": "median", "formula": "Valeur centrale", "format": main_format})
     if secondary_metric:
-        kpis.append({"name": f"Average {secondary_metric}", "column": secondary_metric, "aggregation": "mean", "formula": "Moyenne", "format": infer_format_from_name(secondary_metric)})
-    if primary_category:
-        kpis.append({"name": f"Unique {primary_category}", "column": primary_category, "aggregation": "count", "formula": "Nombre de valeurs observées", "format": "integer"})
+        secondary_agg = infer_default_aggregation(domain, secondary_metric)
+        kpis.append({"name": f"{'Total' if secondary_agg == 'sum' else 'Moyenne'} {secondary_metric}", "column": secondary_metric, "aggregation": secondary_agg, "formula": "Indicateur secondaire", "format": infer_format_from_name(secondary_metric)})
+    if dimension_cols:
+        kpis.append({"name": f"Segments {dimension_cols[0]}", "column": dimension_cols[0], "aggregation": "count", "formula": "Nombre de categories distinctes", "format": "integer"})
+    if time_col and primary_metric:
+        kpis.append({"name": f"Evolution recente {primary_metric}", "column": primary_metric, "aggregation": aggregation, "formula": f"Variation recente sur la colonne temporelle {time_col}", "format": "percentage"})
     kpis.append({"name": "Data Completeness", "column": None, "aggregation": "custom", "formula": "Part des cellules non nulles", "format": "percentage"})
 
-    agg = "sum" if domain in ["finance", "sales", "marketing", "inventory"] else "mean"
     charts = []
+    if time_col and primary_metric:
+        charts.append({
+            "type": "line",
+            "title": f"Evolution de {primary_metric}",
+            "x_column": time_col,
+            "y_column": primary_metric,
+            "aggregation": aggregation,
+            "group_by": None,
+            "description": "Montre la tendance principale dans le temps",
+        })
+    if time_col and secondary_metric:
+        charts.append({
+            "type": "line",
+            "title": f"Evolution de {secondary_metric}",
+            "x_column": time_col,
+            "y_column": secondary_metric,
+            "aggregation": infer_default_aggregation(domain, secondary_metric),
+            "group_by": None,
+            "description": "Permet de comparer une deuxieme mesure cle dans le temps",
+        })
+    if dimension_cols and primary_metric:
+        charts.append({
+            "type": "bar",
+            "title": f"{primary_metric} par {dimension_cols[0]}",
+            "x_column": dimension_cols[0],
+            "y_column": primary_metric,
+            "aggregation": aggregation,
+            "group_by": dimension_cols[0],
+            "description": "Classe les segments les plus contributifs",
+        })
+    if len(dimension_cols) > 1 and primary_metric:
+        charts.append({
+            "type": "bar",
+            "title": f"{primary_metric} par {dimension_cols[1]}",
+            "x_column": dimension_cols[1],
+            "y_column": primary_metric,
+            "aggregation": aggregation,
+            "group_by": dimension_cols[1],
+            "description": "Fournit une seconde lecture de la performance par segment",
+        })
+    elif dimension_cols and not primary_metric:
+        charts.append({
+            "type": "bar",
+            "title": f"Repartition de {dimension_cols[0]}",
+            "x_column": dimension_cols[0],
+            "y_column": None,
+            "aggregation": "count",
+            "group_by": None,
+            "description": "Montre la distribution de la variable la plus structurante",
+        })
+    small_dim = next((col for col in dimension_cols if df[col].nunique() <= 6), None)
+    if small_dim:
+        charts.append({
+            "type": "pie",
+            "title": f"Poids de {small_dim}",
+            "x_column": small_dim,
+            "y_column": None,
+            "aggregation": "count",
+            "group_by": None,
+            "description": "Visualise le poids relatif des principales categories",
+        })
+    if primary_metric and primary_metric in df.columns:
+        charts.append({
+            "type": "bar",
+            "title": f"Distribution de {primary_metric}",
+            "x_column": primary_metric,
+            "y_column": None,
+            "aggregation": "count",
+            "group_by": None,
+            "description": "Montre la dispersion de la mesure principale",
+        })
+    corr_pair = find_strongest_correlation_pair(df, metric_cols)
+    if corr_pair:
+        charts.append({
+            "type": "scatter",
+            "title": f"{corr_pair[0]} vs {corr_pair[1]}",
+            "x_column": corr_pair[0],
+            "y_column": corr_pair[1],
+            "aggregation": "none",
+            "group_by": None,
+            "description": "Met en evidence la relation la plus forte entre deux mesures",
+        })
 
-    # ── 1. Line charts: temporal × each numeric (up to 3) ────────────────────
-    if primary_time:
-        for num in numeric_cols[:3]:
-            charts.append({
-                "type": "line", "title": f"{num} over time",
-                "x_column": primary_time, "y_column": num,
-                "aggregation": agg, "group_by": None,
-                "description": f"Évolution de {num} dans le temps",
-            })
-
-    # ── 2. Bar: category × metric combos (up to 3 cats × 2 metrics) ──────────
-    for cat in categorical_cols[:3]:
-        for num in numeric_cols[:2]:
-            charts.append({
-                "type": "bar", "title": f"{num} by {cat}",
-                "x_column": cat, "y_column": num,
-                "aggregation": agg, "group_by": cat,
-                "description": f"Comparaison de {num} par {cat}",
-            })
-        if not numeric_cols:
-            charts.append({
-                "type": "bar", "title": f"Distribution of {cat}",
-                "x_column": cat, "y_column": None,
-                "aggregation": "count", "group_by": None,
-                "description": f"Répartition des valeurs de {cat}",
-            })
-
-    # ── 3. Pie: first small-cardinality categorical ───────────────────────────
-    for cat in categorical_cols:
-        if df[cat].nunique() <= 10:
-            charts.append({
-                "type": "pie", "title": f"{cat} share",
-                "x_column": cat, "y_column": None,
-                "aggregation": "count", "group_by": None,
-                "description": f"Poids relatif des catégories de {cat}",
-            })
-            break
-
-    # ── 4. Scatter: all unique pairs among first 5 numerics ──────────────────
-    top_nums = numeric_cols[:5]
-    for i in range(len(top_nums)):
-        for j in range(i + 1, len(top_nums)):
-            charts.append({
-                "type": "scatter", "title": f"{top_nums[i]} vs {top_nums[j]}",
-                "x_column": top_nums[i], "y_column": top_nums[j],
-                "aggregation": "none", "group_by": None,
-                "description": f"Relation entre {top_nums[i]} et {top_nums[j]}",
-            })
-            if len(charts) >= 10:
-                break
-        if len(charts) >= 10:
-            break
+    deduped_charts = []
+    seen = set()
+    for chart in charts:
+        key = (chart["type"], chart["title"])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped_charts.append(chart)
 
     return {
         "domain": domain,
-        "context": f"Dataset classé comme '{domain}' à partir des colonnes et du nom de fichier.",
+        "context": f"Dataset classe comme '{domain}' a partir des colonnes et du nom de fichier.",
         "kpis": kpis[:8],
-        "charts": charts[:10],
+        "charts": deduped_charts[:6],
         "insights": build_domain_insights(df, columns_info, domain),
-        "recommended_filters": categorical_cols[:3],
+        "recommended_filters": dimension_cols[:3],
     }
 
 
@@ -825,6 +984,10 @@ def generate_smart_kpis(df: pd.DataFrame, columns_info: List[ColumnInfo], ai_ana
                         value = float(series.min())
                     elif aggregation == "median":
                         value = float(series.median())
+            elif aggregation == "custom" and "evolution recente" in name.lower() and column:
+                time_col = choose_time_column(columns_info)
+                change = compute_period_change(df, time_col, column, infer_default_aggregation(ai_analysis.get("domain", "other"), column))
+                value = change
             elif aggregation == "custom" and "completeness" in name.lower():
                 value = float(round((1 - df.isnull().sum().sum() / max(len(df) * max(len(df.columns), 1), 1)) * 100, 1))
             elif aggregation == "count":
@@ -834,7 +997,8 @@ def generate_smart_kpis(df: pd.DataFrame, columns_info: List[ColumnInfo], ai_ana
                 kpis.append(KPIMetric(
                     name=name,
                     value=value,
-                    format=fmt
+                    format=fmt,
+                    change=value if aggregation == "custom" and "evolution recente" in name.lower() else None
                 ))
         except Exception as e:
             logger.error(f"Error generating KPI {kpi_config}: {e}")
@@ -867,6 +1031,7 @@ def generate_smart_charts(df: pd.DataFrame, columns_info: List[ColumnInfo], ai_a
             y_col = chart_config.get("y_column")
             aggregation = chart_config.get("aggregation", "none")
             group_by = chart_config.get("group_by")
+            description = chart_config.get("description")
             
             # Validate columns exist
             if x_col and x_col not in df.columns:
@@ -886,8 +1051,10 @@ def generate_smart_charts(df: pd.DataFrame, columns_info: List[ColumnInfo], ai_a
             
             if chart_data:
                 config = {"xAxisType": "time"} if chart_type == "line" and x_col and x_col in df.columns and pd.api.types.is_datetime64_any_dtype(df[x_col]) else {}
-                if chart_type == "bar" and x_col == "bin":
+                if chart_type == "bar" and chart_data and "bin" in chart_data[0]:
                     config["isHistogram"] = True
+                if description:
+                    config["description"] = description
                 charts.append(ChartConfig(
                     chart_type=chart_type,
                     title=title,
@@ -902,18 +1069,18 @@ def generate_smart_charts(df: pd.DataFrame, columns_info: List[ColumnInfo], ai_a
             continue
     
     # Supplement with heuristic charts to always reach at least 6
-    if len(charts) < 6:
+    if len(charts) < 4:
         logger.info(f"Only {len(charts)} AI charts generated, supplementing with heuristic charts")
         heuristic = _build_heuristic_charts(df, columns_info)
         existing_titles = {c.title for c in charts}
         for h in heuristic:
-            if len(charts) >= 8:
+            if len(charts) >= 6:
                 break
             if h.title not in existing_titles:
                 charts.append(h)
                 existing_titles.add(h.title)
 
-    return charts[:8]
+    return charts[:6]
 
 
 def _build_heuristic_charts(df: pd.DataFrame, columns_info: List[ColumnInfo]) -> List[ChartConfig]:
@@ -933,39 +1100,36 @@ def _build_heuristic_charts(df: pd.DataFrame, columns_info: List[ColumnInfo]) ->
             config = {"xAxisType": "time"}
         charts.append(ChartConfig(chart_type=chart_type, title=title, x_column=x, y_column=y, data=data, config=config))
 
-    # 1. Lines: temporal × each of first 3 numerics
-    for t in temporal_cols[:1]:
-        for n in numeric_cols[:3]:
-            add("line", f"{n} over time", t, n, "sum")
-
-    # 2. Bars: each category × first 2 numerics
     primary_num = numeric_cols[0] if numeric_cols else None
     second_num  = numeric_cols[1] if len(numeric_cols) > 1 else None
-    for cat in cat_cols[:3]:
+
+    for t in temporal_cols[:1]:
         if primary_num:
-            add("bar", f"{primary_num} by {cat}", cat, primary_num, "sum", 15)
+            add("line", f"Evolution de {primary_num}", t, primary_num, "sum")
         if second_num:
-            add("bar", f"{second_num} by {cat}", cat, second_num, "mean", 15)
-        if not numeric_cols:
-            add("bar", f"Distribution of {cat}", cat, None, "count", 15)
+            add("line", f"Evolution de {second_num}", t, second_num, "mean")
 
-    # 3. Pie: first small-cardinality categorical
-    for cat in cat_cols:
-        if df[cat].nunique() <= 10:
-            add("pie", f"{cat} share", cat, None, "count")
-            break
+    if cat_cols:
+        if primary_num:
+            add("bar", f"{primary_num} par {cat_cols[0]}", cat_cols[0], primary_num, "sum", 12)
+        else:
+            add("bar", f"Repartition de {cat_cols[0]}", cat_cols[0], None, "count", 12)
 
-    # 4. Scatter: all unique pairs among first 5 numerics
-    top_n = numeric_cols[:5]
-    for i in range(len(top_n)):
-        for j in range(i + 1, len(top_n)):
-            add("scatter", f"{top_n[i]} vs {top_n[j]}", top_n[i], top_n[j])
-            if len(charts) >= 10:
-                break
-        if len(charts) >= 10:
-            break
+    if len(cat_cols) > 1 and primary_num:
+        add("bar", f"{primary_num} par {cat_cols[1]}", cat_cols[1], primary_num, "sum", 12)
 
-    return charts[:8]
+    small_cat = next((cat for cat in cat_cols if df[cat].nunique() <= 6), None)
+    if small_cat:
+        add("pie", f"Poids de {small_cat}", small_cat, None, "count")
+
+    if primary_num:
+        add("bar", f"Distribution de {primary_num}", primary_num, None, "count", 10)
+
+    pair = find_strongest_correlation_pair(df, numeric_cols[:5])
+    if pair:
+        add("scatter", f"{pair[0]} vs {pair[1]}", pair[0], pair[1])
+
+    return charts[:6]
 
 
 # In-memory storage for datasets (for demo purposes)

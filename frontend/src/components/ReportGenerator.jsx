@@ -62,10 +62,10 @@ export function ReportGenerator({ datasetId, datasetInfo, onClose }) {
         downloadTextReport(data);
       }
 
-      toast.success("Report generated successfully");
+      toast.success("Rapport genere avec succes");
     } catch (error) {
       console.error("Report generation error:", error);
-      toast.error("Failed to generate report");
+      toast.error("Echec de la generation du rapport");
     } finally {
       setIsGenerating(false);
     }
@@ -209,10 +209,10 @@ export function ReportGenerator({ datasetId, datasetInfo, onClose }) {
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">
-            Generate Report
+            Generer un rapport
           </DialogTitle>
           <DialogDescription>
-            Create a professional analysis report for your dataset
+            Creez un rapport d'analyse pour votre jeu de donnees
           </DialogDescription>
         </DialogHeader>
 
