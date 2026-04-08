@@ -1,0 +1,112 @@
+{
+  "theme": "Dark",
+  "archetype": "Archetype 4 (Swiss & High-Contrast) + Institutional Finance",
+  "design_philosophy": "Authoritative, Dense, precise, high-legibility. Reminiscent of Morgan Stanley or Palantir Foundry.",
+  "typography": {
+    "headings": "Cormorant Garamond",
+    "body": "IBM Plex Sans",
+    "weights": {
+      "headings": "700",
+      "body": "400",
+      "metrics": "600"
+    }
+  },
+  "colors": {
+    "dark": {
+      "--background": "222 47% 6%",
+      "--foreground": "210 40% 98%",
+      "--card": "222 47% 9%",
+      "--card-foreground": "210 40% 98%",
+      "--popover": "222 47% 9%",
+      "--popover-foreground": "210 40% 98%",
+      "--primary": "210 40% 98%",
+      "--primary-foreground": "222 47% 6%",
+      "--secondary": "222 47% 15%",
+      "--secondary-foreground": "210 40% 98%",
+      "--muted": "222 47% 15%",
+      "--muted-foreground": "215 20% 65%",
+      "--accent": "150 60% 40%",
+      "--accent-foreground": "0 0% 100%",
+      "--destructive": "0 70% 50%",
+      "--destructive-foreground": "0 0% 100%",
+      "--border": "222 47% 15%",
+      "--input": "222 47% 15%",
+      "--ring": "215 20% 65%",
+      "--radius": "0.125rem",
+      "--chart-1": "150 60% 40%",
+      "--chart-2": "210 100% 60%",
+      "--chart-3": "40 100% 50%",
+      "--chart-4": "0 70% 50%",
+      "--chart-5": "215 20% 65%"
+    },
+    "light": {
+      "--background": "0 0% 100%",
+      "--foreground": "222 47% 6%",
+      "--card": "0 0% 100%",
+      "--card-foreground": "222 47% 6%",
+      "--popover": "0 0% 100%",
+      "--popover-foreground": "222 47% 6%",
+      "--primary": "222 47% 6%",
+      "--primary-foreground": "210 40% 98%",
+      "--secondary": "210 40% 96%",
+      "--secondary-foreground": "222 47% 6%",
+      "--muted": "210 40% 96%",
+      "--muted-foreground": "215 20% 40%",
+      "--accent": "150 60% 30%",
+      "--accent-foreground": "0 0% 100%",
+      "--destructive": "0 70% 50%",
+      "--destructive-foreground": "0 0% 100%",
+      "--border": "214 32% 91%",
+      "--input": "214 32% 91%",
+      "--ring": "222 47% 6%",
+      "--chart-1": "150 60% 40%",
+      "--chart-2": "210 100% 60%",
+      "--chart-3": "40 100% 50%",
+      "--chart-4": "0 70% 50%",
+      "--chart-5": "215 20% 40%"
+    }
+  },
+  "layout_and_spacing": {
+    "grid": "Control Room Grid (Dense, gap-4). grid-cols-1 md:grid-cols-4 lg:grid-cols-6",
+    "cards": "Sharp edges (2px radius). No heavy shadows. Use 1px borders for structure.",
+    "padding": "Generous on containers (p-6), dense inside data tables (py-1)."
+  },
+  "image_urls": [
+    {
+      "category": "empty_state_upload",
+      "url": "https://static.prod-images.emergentagent.com/jobs/bb1c3bc2-1262-4eec-8f67-8817e3292bc1/images/6b7af2e3d5aa85e7c0f33f41defead234e5c9cb8793d00256633dc140d9aa33f.png",
+      "description": "Abstract empty state for drag-and-drop file upload zone. Use as a background or center image in the upload area."
+    },
+    {
+      "category": "auth_bg",
+      "url": "https://static.prod-images.emergentagent.com/jobs/bb1c3bc2-1262-4eec-8f67-8817e3292bc1/images/1b4922729d3b06d9143a83d3abc6104648bbab131075e6d8eabce057ce75ddb4.png",
+      "description": "High-end corporate finance background for login or landing hero page."
+    },
+    {
+      "category": "user_avatar",
+      "url": "https://images.unsplash.com/photo-1762522926157-bcc04bf0b10a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBjb3Jwb3JhdGUlMjBoZWFkc2hvdHxlbnwwfHx8fDE3NzU1NjYxOTd8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Professional user profile avatar to be used in the top navigation or sidebar profile block."
+    }
+  ],
+  "components_and_features": {
+    "file_upload_zone": "Massive central dropzone. Use dashed borders, muted background. Include the 'empty_state_upload' image in the center.",
+    "kpi_cards": "Bento layout. Value text uses IBM Plex Sans in bold, text-4xl. Add a subtle 1px border. No drop shadows.",
+    "charts": "Use Recharts. Time series (line), Histograms (bar), Scatter (scatter), Heatmap (custom grid or recharts scatter).",
+    "ai_insights_panel": "Right sidebar. Glassmorphism effect `bg-background/80 backdrop-blur-xl`. Use 'accent' (emerald) text for positive insights.",
+    "filter_panel": "Sticky left sidebar or collapsible top accordion.",
+    "data_preview_table": "Shadcn Table. Extremely dense. `text-xs`. Striped rows for high legibility.",
+    "drag_drop_dashboard": "Use CSS Grid with explicit columns and rows. Add drag handles on the top right of each card.",
+    "report_generator": "A dedicated modal using Shadcn Dialog with a clean summary format."
+  },
+  "instructions_to_main_agent": [
+    "1. Replace variables in `src/index.css` with the colors provided in this JSON. It must precisely override the light/dark values.",
+    "2. Add fonts to `index.css`: `@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');`.",
+    "3. Set Tailwind base classes in `index.css` to use `IBM Plex Sans` globally. Override headings (h1, h2, h3) with `font-serif` linked to `Cormorant Garamond` via `tailwind.config.js`.",
+    "4. MANDATORY: Add `data-testid` to all buttons, form inputs, navigation links, KPI cards, tables, and interactive elements. Follow format `data-testid=\"role-action\"`.",
+    "5. Use `@phosphor-icons/react` for all icons (install: `yarn add @phosphor-icons/react`).",
+    "6. Default the theme to `dark`.",
+    "7. PROHIBITED: Do not use generic fonts like Inter, Roboto, or Lato.",
+    "8. PROHIBITED: Do not use teal or purple gradients anywhere.",
+    "9. Use `recharts` for all complex data visualization components."
+  ]
+}

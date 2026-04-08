@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 700;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222 47% 6%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 6%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 6%;
+        --primary: 222 47% 6%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 210 40% 96%;
+        --secondary-foreground: 222 47% 6%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215 20% 40%;
+        --accent: 150 60% 30%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 70% 50%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 222 47% 6%;
+        --chart-1: 150 60% 40%;
+        --chart-2: 210 100% 60%;
+        --chart-3: 40 100% 50%;
+        --chart-4: 0 70% 50%;
+        --chart-5: 215 20% 40%;
+        --radius: 0.125rem;
+    }
+
+    .dark {
+        --background: 222 47% 6%;
+        --foreground: 210 40% 98%;
+        --card: 222 47% 9%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222 47% 9%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 210 40% 98%;
+        --primary-foreground: 222 47% 6%;
+        --secondary: 222 47% 15%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 222 47% 15%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 150 60% 40%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 70% 50%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 222 47% 15%;
+        --input: 222 47% 15%;
+        --ring: 215 20% 65%;
+        --chart-1: 150 60% 40%;
+        --chart-2: 210 100% 60%;
+        --chart-3: 40 100% 50%;
+        --chart-4: 0 70% 50%;
+        --chart-5: 215 20% 65%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}
+
+/* Custom scrollbar for dark theme */
+.dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: hsl(222, 47%, 9%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: hsl(222, 47%, 20%);
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(222, 47%, 25%);
+}
+
+/* Animation utilities */
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slide-up {
+    from { 
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-up {
+    animation: slide-up 0.4s ease-out;
+}
+
+/* Dense data table styles */
+.data-table-dense td,
+.data-table-dense th {
+    @apply py-1 px-2 text-xs;
+}
+
+/* Glassmorphism effect */
+.glass-panel {
+    @apply bg-background/80 backdrop-blur-xl;
+}
